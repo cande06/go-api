@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Funciones necesarias ¿¿iran aca estos controles?? no lo se :c
+// Funciones necesarias
 // Genera un status random
 func randomStatus() string {
 	statuses := []string{"pending", "approved", "rejected"}
@@ -69,7 +69,9 @@ func (s *Service) Create(sale *Sale) error {
 	return s.storage.Set(sale)
 }
 
-//--------AQUI IRIA EL GET---------
+func (s *Service) Get(id string) (*Sale, error) {
+	return s.storage.Read(id)
+}
 
 func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 	existing, err := s.storage.Read(id)
