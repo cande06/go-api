@@ -6,10 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// InitRoutes registers all user CRUD endpoints on the given Gin engine.
-// It initializes the storage, service, and handler, then binds each HTTP
-// method and path to the appropriate handler function.
-
+// rutas para User
 func RegisterRoutes(e *gin.Engine) {
 	userStorage := NewLocalStorage()
 	service := NewService(userStorage)

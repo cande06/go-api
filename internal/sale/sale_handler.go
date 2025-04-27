@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// handler holds the sale service and implements HTTP handlers for sale CRUD.
+// maneja el Service de Sale e implementa handlers http
 type handler struct {
 	saleService *Service
 }

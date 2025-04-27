@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// inicializa los routes
 func InitRoutes(r *gin.Engine) {
 	user.RegisterRoutes(r)
 	sale.RegisterRoutes(r)

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// handler holds the user service and implements HTTP handlers for user CRUD.
+// maneja el Service de User e implementa handlers http
 type handler struct {
 	userService *Service
 }

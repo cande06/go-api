@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// rutas para Sale
 func RegisterRoutes(e *gin.Engine) {
 	saleStorage := NewLocalStorage()
 	service := NewService(saleStorage)
