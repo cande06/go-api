@@ -1,16 +1,15 @@
-package api
+package user
 
 import (
 	"errors"
-	"go-api/internal/user"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-// handler holds the user service and implements HTTP handlers for user CRUD.
+// maneja el Service de User e implementa handlers http
 type handler struct {
-	userService *user.Service
+	userService *Service
 }
 
 // handleCreate maneja POST /users
@@ -26,7 +25,7 @@ func (h *handler) handleCreate(ctx *gin.Context) {
 		return
 	}
 
-	u := &user.User{
+	u := &User{
 		Name:     req.Name,
 		Address:  req.Address,
 		NickName: req.NickName,
@@ -45,7 +44,7 @@ func (h *handler) handleRead(ctx *gin.Context) {
 
 	u, err := h.userService.Get(id)
 	if err != nil {
-		if errors.Is(err, user.ErrNotFound) {
+		if errors.Is(err, ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
@@ -62,7 +61,7 @@ func (h *handler) handleUpdate(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	// bind partial update fields
-	var fields *user.UpdateFields
+	var fields *UpdateFields
 	if err := ctx.ShouldBindJSON(&fields); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -70,7 +69,7 @@ func (h *handler) handleUpdate(ctx *gin.Context) {
 
 	u, err := h.userService.Update(id, fields)
 	if err != nil {
-		if errors.Is(err, user.ErrNotFound) {
+		if errors.Is(err, ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
@@ -87,7 +86,7 @@ func (h *handler) handleDelete(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	if err := h.userService.Delete(id); err != nil {
-		if errors.Is(err, user.ErrNotFound) {
+		if errors.Is(err, ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
