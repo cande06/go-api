@@ -13,9 +13,9 @@ type handler struct {
 	userService *user.Service
 }
 
-// handleCreate handles POST /users
+// handleCreate maneja POST /users
 func (h *handler) handleCreate(ctx *gin.Context) {
-	// request payload
+	// request payload = datos
 	var req struct {
 		Name     string `json:"name"`
 		Address  string `json:"address"`
@@ -39,7 +39,7 @@ func (h *handler) handleCreate(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, u)
 }
 
-// handleRead handles GET /users/:id
+// handleRead maneja GET /users/:id
 func (h *handler) handleRead(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -57,7 +57,7 @@ func (h *handler) handleRead(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, u)
 }
 
-// handleUpdate handles PUT /users/:id
+// handleUpdate maneja PUT /users/:id
 func (h *handler) handleUpdate(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -82,7 +82,7 @@ func (h *handler) handleUpdate(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, u)
 }
 
-// handleDelete handles DELETE /users/:id
+// handleDelete maneja DELETE /users/:id
 func (h *handler) handleDelete(ctx *gin.Context) {
 	id := ctx.Param("id")
 

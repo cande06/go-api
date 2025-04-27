@@ -15,7 +15,7 @@ type Service struct {
 // NewService creates a new Service.
 func NewService(storage *LocalStorage) *Service {
 	return &Service{
-		storage: storage,
+		storage: storage, //asigna lo apuntado por el puntero al struct
 	}
 }
 

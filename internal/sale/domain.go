@@ -2,7 +2,6 @@ package user
 
 import "time"
 
-// User represents a system user with metadata for auditing and versioning.
 type Sale struct {
 	ID        string    `json:"id"`
 	User_id   string    `json:"user_id"`

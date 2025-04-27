@@ -27,7 +27,7 @@ func (l *LocalStorage) Set(user *User) error {
 		return ErrEmptyID
 	}
 
-	l.m[user.ID] = user
+	l.m[user.ID] = user //guarda el user, con user.ID como su key
 	return nil
 }
 

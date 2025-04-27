@@ -14,7 +14,7 @@ type User struct {
 }
 
 // UpdateFields represents the optional fields for updating a User.
-// A nil pointer means “no change” for that field.
+// Puntero nil = no hay cambios en ese campo
 type UpdateFields struct {
 	Name     *string `json:"name"`
 	Address  *string `json:"address"`
