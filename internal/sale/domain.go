@@ -16,3 +16,12 @@ type Sale struct {
 type UpdateFields struct {
 	Status *string `json:"status"`
 }
+
+// Metadata me permite tener un orden definitivo para mostrar los datos
+type Metadata struct {
+	Quantity    int     `json:"quantity"`
+	Approved    int     `json:"approved"`
+	Rejected    int     `json:"rejected"`
+	Pending     int     `json:"pending"`
+	TotalAmount float32 `json:"total_amount"`
+}

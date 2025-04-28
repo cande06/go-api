@@ -11,33 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Funciones necesarias
-// Genera un status random
-func randomStatus() string {
-	statuses := []string{"pending", "approved", "rejected"}
-	return statuses[rand.Intn(len(statuses))]
-}
-
-// Verifica que el ID del usuario exista
-func validateUser(userID string) error {
-	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/users/%s", userID))
-	//resp almacena la respuesta del servidor
-	//err almacenara un error en caso de que el servidor no pueda responder
-	if err != nil {
-		return fmt.Errorf("failed to check user: %w", err)
-	}
-	defer resp.Body.Close() //cierra resp.body al final de la funcion
-
-	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("user not found")
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected error checking user: %s", resp.Status)
-	}
-
-	return nil
-}
-
 type Service struct {
 	storage *LocalStorage
 }
@@ -69,8 +42,8 @@ func (s *Service) Create(sale *Sale) error {
 	return s.storage.Set(sale)
 }
 
-func (s *Service) Get(id string) (*Sale, error) {
-	return s.storage.Read(id)
+func (s *Service) Get(id string, st string) ([]*Sale, error) {
+	return s.storage.FindSale(id, st)
 }
 
 func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
@@ -100,4 +73,31 @@ func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 	}
 
 	return existing, nil
+}
+
+// Funciones necesarias
+// Genera un status random
+func randomStatus() string {
+	statuses := []string{"pending", "approved", "rejected"}
+	return statuses[rand.Intn(len(statuses))]
+}
+
+// Verifica que el ID del usuario exista
+func validateUser(userID string) error {
+	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/users/%s", userID))
+	//resp almacena la respuesta del servidor
+	//err almacenara un error en caso de que el servidor no pueda responder
+	if err != nil {
+		return fmt.Errorf("failed to check user: %w", err)
+	}
+	defer resp.Body.Close() //cierra resp.body al final de la funcion
+
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("user not found")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected error checking user: %s", resp.Status)
+	}
+
+	return nil
 }
