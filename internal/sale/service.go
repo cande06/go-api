@@ -8,8 +8,40 @@ import (
 	"fmt"
 	"net/http"
 
+	"errors"
+
 	"github.com/google/uuid"
 )
+
+// Funciones necesarias
+// Genera un status random
+func randomStatus() string {
+	statuses := []string{"pending", "approved", "rejected"}
+	return statuses[rand.Intn(len(statuses))]
+}
+
+// Verifica que el ID del usuario exista
+func validateUser(userID string) error {
+	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/users/%s", userID))
+	//resp almacena la respuesta del servidor
+	//err almacenara un error en caso de que el servidor no pueda responder
+	if err != nil {
+		// return fmt.Errorf("failed to check user: %w", err)
+		return fmt.Errorf("internal server error")
+	}
+	defer resp.Body.Close() //cierra resp.body al final de la funcion
+
+	if resp.StatusCode == http.StatusNotFound {
+		// return fmt.Errorf("user not found")
+		return fmt.Errorf("bad request")
+	}
+	if resp.StatusCode != http.StatusOK {
+		// return fmt.Errorf("unexpected error checking user: %s", resp.Status)
+		return fmt.Errorf("bad request")
+	}
+
+	return nil
+}
 
 type Service struct {
 	storage *LocalStorage
@@ -49,19 +81,22 @@ func (s *Service) Get(id string, st string) ([]*Sale, error) {
 func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 	existing, err := s.storage.Read(id)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("internal server error: %w", err)
 	}
 
 	if existing.Status != "pending" {
-		return nil, fmt.Errorf("only pending sales can be updated")
+		return nil, fmt.Errorf("conflict")
 	}
 
 	if sale.Status == nil {
-		return nil, fmt.Errorf("status is required")
+		return nil, fmt.Errorf("bad request")
 	}
 
 	if *sale.Status != "approved" && *sale.Status != "rejected" {
-		return nil, fmt.Errorf("invalid status")
+		return nil, fmt.Errorf("bad request")
 	}
 
 	existing.Status = *sale.Status
@@ -69,35 +104,11 @@ func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 	existing.Version++
 
 	if err := s.storage.Set(existing); err != nil {
-		return nil, err
+		if errors.Is(err, ErrEmptyID) {
+			return nil, fmt.Errorf("bad request")
+		}
+		return nil, fmt.Errorf("internal server error: %w", err)
 	}
 
 	return existing, nil
-}
-
-// Funciones necesarias
-// Genera un status random
-func randomStatus() string {
-	statuses := []string{"pending", "approved", "rejected"}
-	return statuses[rand.Intn(len(statuses))]
-}
-
-// Verifica que el ID del usuario exista
-func validateUser(userID string) error {
-	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/users/%s", userID))
-	//resp almacena la respuesta del servidor
-	//err almacenara un error en caso de que el servidor no pueda responder
-	if err != nil {
-		return fmt.Errorf("failed to check user: %w", err)
-	}
-	defer resp.Body.Close() //cierra resp.body al final de la funcion
-
-	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("user not found")
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected error checking user: %s", resp.Status)
-	}
-
-	return nil
 }
