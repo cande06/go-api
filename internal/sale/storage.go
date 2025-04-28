@@ -45,7 +45,7 @@ func (l *LocalStorage) FindSale(id string, st string) ([]*Sale, error) {
 		return nil, ErrEmptyID
 	}
 
-	if st != "approved" && st != "rejected" && st != "pending" {
+	if st != "" && st != "approved" && st != "rejected" && st != "pending" {
 		return nil, ErrInvalidStatus
 	}
 
@@ -64,5 +64,10 @@ func (l *LocalStorage) FindSale(id string, st string) ([]*Sale, error) {
 			}
 		}
 	}
+
+	if results == nil {
+		return []*Sale{}, nil
+	}
+
 	return results, nil
 }
