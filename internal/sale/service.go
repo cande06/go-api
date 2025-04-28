@@ -74,8 +74,8 @@ func (s *Service) Create(sale *Sale) error {
 	return s.storage.Set(sale)
 }
 
-func (s *Service) Get(id string) (*Sale, error) {
-	return s.storage.Read(id)
+func (s *Service) Get(id string, st string) ([]*Sale, error) {
+	return s.storage.FindSale(id, st)
 }
 
 func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {

@@ -130,13 +130,19 @@ func (h *handler) handleCreateSale(ctx *gin.Context) {
 
 // handleRead maneja GET /sales?querystring
 func (h *handler) handleReadSale(ctx *gin.Context) {
-	id := ctx.Query("user_id")
-	status := ctx.Query("status")
+	user_id := ctx.Query("user_id")
+	st := ctx.DefaultQuery("status", "")
 
-	u, err := h.userService.Get(id)
+	//busca las ventas que coinciden
+	s, err := h.saleService.Get(user_id, st)
 	if err != nil {
-		if errors.Is(err, sale.ErrNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		if errors.Is(err, sale.ErrEmptyID) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if errors.Is(err, sale.ErrInvalidStatus) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -144,8 +150,41 @@ func (h *handler) handleReadSale(ctx *gin.Context) {
 		return
 	}
 
+	// metadata
+	var (
+		quantity     = 0
+		approved     = 0
+		rejected     = 0
+		pending      = 0
+		total_amount float32
+	)
+
+	for _, sale := range s {
+		quantity++
+		total_amount += sale.Amount
+
+		switch sale.Status {
+		case "approved":
+			approved++
+		case "rejected":
+			rejected++
+		case "pending":
+			pending++
+		}
+	}
+
+	md := sale.Metadata{
+		Quantity:    quantity,
+		Approved:    approved,
+		Rejected:    rejected,
+		Pending:     pending,
+		TotalAmount: total_amount,
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"user": u.ID, "status requested": status})
+		"metadata": md,
+		"results":  s,
+	})
 }
 
 // handleUpdate maneja PUT /sales/:id
