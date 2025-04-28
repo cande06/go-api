@@ -2,11 +2,11 @@ package sale
 
 import "errors"
 
-// ErrNotFound retorna cuando la venta proporcionada no existe
-var ErrNotFound = errors.New("sale not found")
+// ErrNotFound retorna cuando la venta proporcionada no existe (sale not found)
+var ErrNotFound = errors.New("not found")
 
-// ErrEmptyID retorna cuando se intenta almacenar una venta con ID vacio
-var ErrEmptyID = errors.New("empty sale ID")
+// ErrEmptyID retorna cuando se intenta almacenar una venta con ID vacio (id empty)
+var ErrEmptyID = errors.New("bad request")
 
 type LocalStorage struct {
 	m map[string]*Sale
