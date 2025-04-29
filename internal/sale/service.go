@@ -11,6 +11,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 // Funciones necesarias
@@ -44,12 +45,20 @@ func validateUser(userID string) error {
 }
 
 type Service struct {
-	storage *LocalStorage
+	storage Storage
+
+	logger *zap.Logger
 }
 
-func NewService(storage *LocalStorage) *Service {
+func NewService(storage Storage, logger *zap.Logger) *Service {
+	if logger == nil {
+		logger, _ = zap.NewProduction()
+		defer logger.Sync()
+	}
+
 	return &Service{
 		storage: storage,
+		logger: logger,
 	}
 }
 

@@ -11,6 +11,13 @@ var ErrEmptyID = errors.New("bad request")
 // ErrInvalidStatus retorna cuando se intenta buscar una venta con un estado invalido
 var ErrInvalidStatus = errors.New("invalid sale status")
 
+type Storage interface {
+	Set(sale *Sale) error
+	Read(id string) (*Sale, error)
+	// Delete(id string) error
+	FindSale(id string, st string) ([]*Sale, error)
+}
+
 type LocalStorage struct {
 	m map[string]*Sale
 }

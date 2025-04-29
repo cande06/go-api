@@ -7,11 +7,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type handler struct {
 	saleService *sale.Service
 	userService *user.Service
+	logger *zap.Logger
 }
 
 // **************   USERS   *******************

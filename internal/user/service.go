@@ -4,18 +4,28 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 // Service provides high-level user management operations on a LocalStorage backend.
 type Service struct {
 	// storage is the underlying persistence for User entities.
-	storage *LocalStorage
+	storage Storage
+
+	// logger is our observability component to log.
+	logger *zap.Logger
 }
 
 // NewService creates a new Service.
-func NewService(storage *LocalStorage) *Service {
+func NewService(storage Storage, logger *zap.Logger) *Service {
+	if logger == nil {
+		logger, _ = zap.NewProduction()
+		defer logger.Sync() // flushes buffer, if any
+	}
+
 	return &Service{
 		storage: storage, //asigna lo apuntado por el puntero al struct
+		logger: logger,
 	}
 }
 
@@ -28,6 +38,11 @@ func (s *Service) Create(user *User) error {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 	user.Version = 1
+
+	if err := s.storage.Set(user); err != nil {
+		s.logger.Error("failed to set user", zap.Error(err), zap.Any("user", user))
+		return err
+	}
 
 	return s.storage.Set(user)
 }
