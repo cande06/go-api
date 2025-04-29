@@ -13,15 +13,16 @@ func InitRoutes(e *gin.Engine) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 
-	saleStorage := sale.NewLocalStorage()
-	saleService := sale.NewService(saleStorage, logger)
-
 	userStorage := user.NewLocalStorage()
+	saleStorage := sale.NewLocalStorage()
+
+	//sale service recibe dos localStorage para comprobar que el una compra le pertenece a un usuario
 	userService := user.NewService(userStorage, logger)
+	saleService := sale.NewService(saleStorage, userStorage, logger)
 
 	h := handler{
-		saleService: saleService,
 		userService: userService,
+		saleService: saleService,
 		logger: logger,
 	}
 

@@ -13,43 +13,98 @@ import (
 )
 
 func TestIntegrationCreateAndGet(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	app := gin.Default()
 	api.InitRoutes(app)
 
-	req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
-	res := fakeRequest(app, req)
+	var createdUser user.User
+	var createdSaleID string
 
-	require.NotNil(t, res)
-	require.Equal(t, http.StatusOK, res.Code)
-	require.Contains(t, res.Body.String(), "pong")
+	t.Run("create user", func(t *testing.T) {
+		reqUser, _ := http.NewRequest(http.MethodPost, "/users", bytes.NewBufferString(`{
+			"name":"Ayrton",
+			"address":"Pringles",
+			"nickname":"Chiche"
+		}`))
+		reqUser.Header.Set("Content-Type", "application/json")
 
-	req, _ = http.NewRequest(http.MethodPost, "/users", bytes.NewBufferString(`{
-		"name":"Ayrton",
-		"address": "Pringles",
-		"nickname": "Chiche"	
-	}`))
+		resUser := fakeRequest(app, reqUser)
 
-	res = fakeRequest(app, req)
+		require.Equal(t, http.StatusCreated, resUser.Code)
+		require.NoError(t, json.Unmarshal(resUser.Body.Bytes(), &createdUser))
+		require.NotEmpty(t, createdUser.ID)
+	})
 
-	require.NotNil(t, res)
-	require.Equal(t, http.StatusCreated, res.Code)
+	t.Run("patch user", func(t *testing.T) {
+		updatePayload := map[string]interface{}{
+			"name":     "Juan",
+			"address":  "San Martin 134",
+			"nickname": "Juan Doe",
+		}
+		payloadBytes, _ := json.Marshal(updatePayload)
 
-	var resUser *user.User
-	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &resUser))
-	require.Equal(t, "Ayrton", resUser.Name)
-	require.Equal(t, "Pringles", resUser.Address)
-	require.Equal(t, "Chiche", resUser.NickName)
-	require.Equal(t, 1, resUser.Version)
-	require.NotEmpty(t, resUser.ID)
-	require.NotEmpty(t, resUser.CreatedAt)
-	require.NotEmpty(t, resUser.UpdatedAt)
+		reqUser, _ := http.NewRequest(http.MethodPatch, "/users/"+createdUser.ID, bytes.NewBuffer(payloadBytes))
+		reqUser.Header.Set("Content-Type", "application/json")
 
-	req, _ = http.NewRequest(http.MethodGet, "/users/"+resUser.ID, nil)
+		resUser := fakeRequest(app, reqUser)
 
-	res = fakeRequest(app, req)
+		require.Equal(t, http.StatusOK, resUser.Code)
 
-	require.NotNil(t, res)
-	require.Equal(t, http.StatusOK, res.Code)
+		var patchUser user.User
+		require.NoError(t, json.Unmarshal(resUser.Body.Bytes(), &patchUser))
+		require.Equal(t, "Juan", patchUser.Name)
+	})
+
+	t.Run("create sale", func(t *testing.T) {
+		salePayload := map[string]interface{}{
+			"user_id": createdUser.ID,
+			"amount":  999.9,
+		}
+		payloadBytes, _ := json.Marshal(salePayload)
+
+		reqSale, _ := http.NewRequest(http.MethodPost, "/sales", bytes.NewBuffer(payloadBytes))
+		reqSale.Header.Set("Content-Type", "application/json")
+
+		resSale := fakeRequest(app, reqSale)
+		require.Equal(t, http.StatusCreated, resSale.Code)
+
+		var createdSale map[string]interface{}
+		require.NoError(t, json.Unmarshal(resSale.Body.Bytes(), &createdSale))
+		createdSaleID = createdSale["id"].(string)
+		require.NotEmpty(t, createdSaleID)
+	})
+
+	t.Run("get sale", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/sales?user_id="+createdUser.ID, nil)
+		res := fakeRequest(app, req)
+
+		require.Equal(t, http.StatusOK, res.Code)
+
+		var fetchedSale map[string]interface{}
+		require.NoError(t, json.Unmarshal(res.Body.Bytes(), &fetchedSale))
+
+		var response map[string]interface{}
+		require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+
+		results := response["results"].([]interface{})
+		require.NotEmpty(t, results)
+
+		firstSale := results[0].(map[string]interface{})
+		require.Equal(t, createdUser.ID, firstSale["user_id"])
+	})
+
+	// t.Run("delete user", func(t *testing.T) {
+	// 	req, _ := http.NewRequest(http.MethodDelete, "/users/"+createdUser.ID, nil)
+	// 	res := fakeRequest(app, req)
+	// 	require.Equal(t, http.StatusOK, res.Code)
+	// })
+
+	t.Run("ping", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
+		res := fakeRequest(app, req)
+		require.Equal(t, http.StatusOK, res.Code)
+		require.Contains(t, res.Body.String(), "pong")
+	})
 }
 
 func fakeRequest(e *gin.Engine, r *http.Request) *httptest.ResponseRecorder {

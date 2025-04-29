@@ -2,12 +2,16 @@ package sale
 
 import (
 	"errors"
-	"github.com/stretchr/testify/require"
+	"go-api/internal/user"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestService_Create_Simple(t *testing.T) {
-	s := NewService(NewLocalStorage(), nil)
+	logger := zap.NewNop()
+	s := NewService(NewLocalStorage(), user.NewLocalStorage(), logger)
 
 	input := &Sale{
 		Status: "pending",
@@ -25,7 +29,7 @@ func TestService_Create_Simple(t *testing.T) {
 		mockSet: func(sale *Sale) error {
 			return errors.New("fake error trying to set sale")
 		},
-	}, nil)
+	}, s.userStorage, logger)
 
 	err = s.Create(input)
 	require.NotNil(t, err)

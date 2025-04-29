@@ -62,11 +62,11 @@ func (l *LocalStorage) FindSale(id string, st string) ([]*Sale, error) {
 	// recorro y busco
 	for _, sale := range l.m {
 		if st != "" {
-			if sale.User_id == id && sale.Status == st {
+			if sale.UserID == id && sale.Status == st {
 				results = append(results, sale)
 			}
 		} else {
-			if sale.User_id == id {
+			if sale.UserID == id {
 				results = append(results, sale)
 			}
 		}

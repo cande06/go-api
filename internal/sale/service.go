@@ -6,12 +6,11 @@ import (
 	"math/rand"
 
 	"fmt"
-	"net/http"
-
 	"errors"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"go-api/internal/user"
 )
 
 // Funciones necesarias
@@ -22,42 +21,53 @@ func randomStatus() string {
 }
 
 // Verifica que el ID del usuario exista
-func validateUser(userID string) error {
-	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/users/%s", userID))
-	//resp almacena la respuesta del servidor
-	//err almacenara un error en caso de que el servidor no pueda responder
+// func validateUser(userID string) error {
+// 	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/users/%s", userID))
+// 	//resp almacena la respuesta del servidor
+// 	//err almacenara un error en caso de que el servidor no pueda responder
+// 	if err != nil {
+// 		// return fmt.Errorf("failed to check user: %w", err)
+// 		return fmt.Errorf("internal server error")
+// 	}
+// 	defer resp.Body.Close() //cierra resp.body al final de la funcion
+
+// 	if resp.StatusCode == http.StatusNotFound {
+// 		// return fmt.Errorf("user not found")
+// 		return fmt.Errorf("bad request")
+// 	}
+// 	if resp.StatusCode != http.StatusOK {
+// 		// return fmt.Errorf("unexpected error checking user: %s", resp.Status)
+// 		return fmt.Errorf("bad request")
+// 	}
+
+// 	return nil
+// }
+
+
+//Verifica que le usuario exista sin hacer una consulta http al localhost
+func (s *Service) validateUser(userID string) error {
+	_, err := s.userStorage.Read(userID)
 	if err != nil {
-		// return fmt.Errorf("failed to check user: %w", err)
-		return fmt.Errorf("internal server error")
+		return fmt.Errorf("user not found: %v", err)
 	}
-	defer resp.Body.Close() //cierra resp.body al final de la funcion
-
-	if resp.StatusCode == http.StatusNotFound {
-		// return fmt.Errorf("user not found")
-		return fmt.Errorf("bad request")
-	}
-	if resp.StatusCode != http.StatusOK {
-		// return fmt.Errorf("unexpected error checking user: %s", resp.Status)
-		return fmt.Errorf("bad request")
-	}
-
 	return nil
 }
 
 type Service struct {
 	storage Storage
-
+	userStorage user.Storage
 	logger *zap.Logger
 }
 
-func NewService(storage Storage, logger *zap.Logger) *Service {
+func NewService(saleStorage Storage, userStorage user.Storage , logger *zap.Logger) *Service {
 	if logger == nil {
 		logger, _ = zap.NewProduction()
 		defer logger.Sync()
 	}
 
 	return &Service{
-		storage: storage,
+		storage:     saleStorage,
+		userStorage: userStorage,		
 		logger: logger,
 	}
 }
@@ -66,7 +76,7 @@ func (s *Service) Create(sale *Sale) error {
 	now := time.Now()
 
 	//Controles
-	err := validateUser(sale.User_id)
+	err := s.validateUser(sale.UserID)
 	if err != nil {
 		return err
 	}

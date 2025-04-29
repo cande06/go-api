@@ -110,7 +110,7 @@ func (h *handler) handleDeleteUser(ctx *gin.Context) {
 func (h *handler) handleCreateSale(ctx *gin.Context) {
 	// request payload = solicitar datos
 	var req struct {
-		User_id string  `json:"user_id"`
+		UserID string  `json:"user_id"`
 		Amount  float32 `json:"amount"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -119,7 +119,7 @@ func (h *handler) handleCreateSale(ctx *gin.Context) {
 	}
 
 	s := &sale.Sale{
-		User_id: req.User_id,
+		UserID: req.UserID,
 		Amount:  req.Amount,
 	}
 	if err := h.saleService.Create(s); err != nil {
