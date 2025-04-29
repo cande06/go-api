@@ -6,18 +6,24 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func InitRoutes(e *gin.Engine) {
-	saleStorage := sale.NewLocalStorage()
-	saleService := sale.NewService(saleStorage)
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
 
 	userStorage := user.NewLocalStorage()
-	userService := user.NewService(userStorage)
+	saleStorage := sale.NewLocalStorage()
+
+	//sale service recibe dos localStorage para comprobar que el una compra le pertenece a un usuario
+	userService := user.NewService(userStorage, logger)
+	saleService := sale.NewService(saleStorage, userStorage, logger)
 
 	h := handler{
-		saleService: saleService,
 		userService: userService,
+		saleService: saleService,
+		logger: logger,
 	}
 
 	//****** RUTAS PARA USER ********

@@ -4,7 +4,7 @@ import "time"
 
 type Sale struct {
 	ID        string    `json:"id"`
-	User_id   string    `json:"user_id"`
+	UserID    string    `json:"user_id"`
 	Amount    float32   `json:"amount"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`

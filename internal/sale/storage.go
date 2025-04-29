@@ -11,6 +11,13 @@ var ErrEmptyID = errors.New("bad request")
 // ErrInvalidStatus retorna cuando se intenta buscar una venta con un estado invalido
 var ErrInvalidStatus = errors.New("invalid sale status")
 
+type Storage interface {
+	Set(sale *Sale) error
+	Read(id string) (*Sale, error)
+	// Delete(id string) error
+	FindSale(id string, st string) ([]*Sale, error)
+}
+
 type LocalStorage struct {
 	m map[string]*Sale
 }
@@ -55,11 +62,11 @@ func (l *LocalStorage) FindSale(id string, st string) ([]*Sale, error) {
 	// recorro y busco
 	for _, sale := range l.m {
 		if st != "" {
-			if sale.User_id == id && sale.Status == st {
+			if sale.UserID == id && sale.Status == st {
 				results = append(results, sale)
 			}
 		} else {
-			if sale.User_id == id {
+			if sale.UserID == id {
 				results = append(results, sale)
 			}
 		}

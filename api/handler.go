@@ -7,11 +7,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type handler struct {
 	saleService *sale.Service
 	userService *user.Service
+	logger *zap.Logger
 }
 
 // **************   USERS   *******************
@@ -108,7 +110,7 @@ func (h *handler) handleDeleteUser(ctx *gin.Context) {
 func (h *handler) handleCreateSale(ctx *gin.Context) {
 	// request payload = solicitar datos
 	var req struct {
-		User_id string  `json:"user_id"`
+		UserID string  `json:"user_id"`
 		Amount  float32 `json:"amount"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -117,7 +119,7 @@ func (h *handler) handleCreateSale(ctx *gin.Context) {
 	}
 
 	s := &sale.Sale{
-		User_id: req.User_id,
+		UserID: req.UserID,
 		Amount:  req.Amount,
 	}
 	if err := h.saleService.Create(s); err != nil {
@@ -192,13 +194,13 @@ func (h *handler) handleUpdateSale(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	// bind partial update fields
-	var fields *sale.UpdateFields
+	var fields sale.UpdateFields
 	if err := ctx.ShouldBindJSON(&fields); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	s, err := h.saleService.Update(id, fields)
+	s, err := h.saleService.Update(id, &fields)
 	if err != nil {
 		if errors.Is(err, sale.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
