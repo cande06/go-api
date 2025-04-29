@@ -36,10 +36,9 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 	})
 
 	t.Run("patch user", func(t *testing.T) {
-		updatePayload := map[string]interface{}{
-			"name":     "Juan",
-			"address":  "San Martin 134",
-			"nickname": "Juan Doe",
+		status := "approved"
+		updatePayload := map[string]*string{
+			"status": &status,
 		}
 		payloadBytes, _ := json.Marshal(updatePayload)
 
@@ -52,13 +51,14 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 
 		var patchUser user.User
 		require.NoError(t, json.Unmarshal(resUser.Body.Bytes(), &patchUser))
-		require.Equal(t, "Juan", patchUser.Name)
+		require.Equal(t, "Ayrton", patchUser.Name)
 	})
 
 	t.Run("create sale", func(t *testing.T) {
 		salePayload := map[string]interface{}{
 			"user_id": createdUser.ID,
 			"amount":  999.9,
+			"status": "pending",
 		}
 		payloadBytes, _ := json.Marshal(salePayload)
 
@@ -91,6 +91,24 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 
 		firstSale := results[0].(map[string]interface{})
 		require.Equal(t, createdUser.ID, firstSale["user_id"])
+	})
+
+	t.Run("patch sale", func(t *testing.T) {
+		updatePayload := map[string]interface{}{
+			"status": "approved",
+		}
+		payloadBytes, _ := json.Marshal(updatePayload)
+
+		reqSale, _ := http.NewRequest(http.MethodPatch, "/sales/"+createdSaleID, bytes.NewBuffer(payloadBytes))
+		reqSale.Header.Set("Content-Type", "application/json")
+
+		resSale := fakeRequest(app, reqSale)
+		t.Log("PATCH response body:", resSale.Body.String())
+		require.Equal(t, http.StatusOK, resSale.Code)
+
+		var patchedSale map[string]interface{}
+		require.NoError(t, json.Unmarshal(resSale.Body.Bytes(), &patchedSale))
+		require.Equal(t, "approved", patchedSale["status"])
 	})
 
 	// t.Run("delete user", func(t *testing.T) {

@@ -194,13 +194,13 @@ func (h *handler) handleUpdateSale(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	// bind partial update fields
-	var fields *sale.UpdateFields
+	var fields sale.UpdateFields
 	if err := ctx.ShouldBindJSON(&fields); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	s, err := h.saleService.Update(id, fields)
+	s, err := h.saleService.Update(id, &fields)
 	if err != nil {
 		if errors.Is(err, sale.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
