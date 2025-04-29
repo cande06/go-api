@@ -2,8 +2,10 @@ package user
 
 import (
 	"errors"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestService_Create_Simple(t *testing.T) {
@@ -27,7 +29,7 @@ func TestService_Create_Simple(t *testing.T) {
 		mockSet: func(user *User) error {
 			return errors.New("fake error trying to set user")
 		},
-	}, nil)
+	}, zap.NewNop())
 
 	err = s.Create(input)
 	require.NotNil(t, err)
@@ -35,6 +37,7 @@ func TestService_Create_Simple(t *testing.T) {
 }
 
 func TestService_Create(t *testing.T) {
+
 	type fields struct {
 		storage Storage
 	}
@@ -91,10 +94,12 @@ func TestService_Create(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Service{
 				storage: tt.fields.storage,
+				logger: zap.NewNop(),
 			}
 
 			err := s.Create(tt.args.user)
