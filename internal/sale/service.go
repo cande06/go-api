@@ -5,19 +5,105 @@ import (
 
 	"math/rand"
 
-	"fmt"
 	"errors"
+	// "fmt"
+
+	"go-api/internal/user"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"go-api/internal/user"
 )
 
-// Funciones necesarias
+var ErrInexistentUser = errors.New("user does not exist")
+
+type Service struct {
+	storage     Storage
+	userStorage user.Storage
+	logger      *zap.Logger
+}
+
+func NewService(saleStorage Storage, userStorage user.Storage, logger *zap.Logger) *Service {
+	if logger == nil {
+		logger, _ = zap.NewProduction()
+		defer logger.Sync()
+	}
+
+	return &Service{
+		storage:     saleStorage,
+		userStorage: userStorage,
+		logger:      logger,
+	}
+}
+
+// ## Funciones necesarias
 // Genera un status random
 func randomStatus() string {
 	statuses := []string{"pending", "approved", "rejected"}
 	return statuses[rand.Intn(len(statuses))]
+}
+
+// Verifica que el usuario exista sin hacer una consulta http al localhost
+func (s *Service) validateUser(userID string) error {
+	_, err := s.userStorage.Read(userID)
+	if err != nil {
+		return ErrInexistentUser
+	}
+	return nil
+}
+
+func (s *Service) Create(sale *Sale) error {
+	now := time.Now()
+
+	//Controles
+	err := s.validateUser(sale.UserID)
+	if err != nil {
+		return err
+	}
+
+	sale.ID = uuid.NewString()
+	sale.Status = randomStatus()
+	sale.CreatedAt = now
+	sale.UpdatedAt = now
+	sale.Version = 1
+
+	if err := s.storage.Set(sale); err != nil {
+		return err
+	}
+	return s.storage.Set(sale)
+}
+
+func (s *Service) Get(id string, st string) ([]*Sale, error) {
+	return s.storage.FindSale(id, st)
+}
+
+func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
+	//sale exists
+	existing, err := s.storage.Read(id)
+	if err != nil {
+		// if errors.Is(err, ErrNotFound) {
+		// return nil, ErrNotFound
+		// }
+
+		return nil, err
+	}
+	//sale status must be pending
+	if existing.Status != "pending" {
+		return nil, ErrInvalidRequest
+	}
+	// validate body
+	if (*sale.Status != "approved") && (*sale.Status != "rejected") || (sale.Status == nil) {
+		return nil, ErrInvalidUpdate
+	}
+
+	existing.Status = *sale.Status
+	existing.UpdatedAt = time.Now()
+	existing.Version++
+
+	if err := s.storage.Set(existing); err != nil {
+		return nil, err
+	}
+
+	return existing, nil
 }
 
 // Verifica que el ID del usuario exista
@@ -42,92 +128,3 @@ func randomStatus() string {
 
 // 	return nil
 // }
-
-
-//Verifica que le usuario exista sin hacer una consulta http al localhost
-func (s *Service) validateUser(userID string) error {
-	_, err := s.userStorage.Read(userID)
-	if err != nil {
-		return fmt.Errorf("user not found: %v", err)
-	}
-	return nil
-}
-
-type Service struct {
-	storage Storage
-	userStorage user.Storage
-	logger *zap.Logger
-}
-
-func NewService(saleStorage Storage, userStorage user.Storage , logger *zap.Logger) *Service {
-	if logger == nil {
-		logger, _ = zap.NewProduction()
-		defer logger.Sync()
-	}
-
-	return &Service{
-		storage:     saleStorage,
-		userStorage: userStorage,		
-		logger: logger,
-	}
-}
-
-func (s *Service) Create(sale *Sale) error {
-	now := time.Now()
-
-	//Controles
-	err := s.validateUser(sale.UserID)
-	if err != nil {
-		return err
-	}
-	if sale.Amount <= 0 {
-		return fmt.Errorf("amount must be greater than 0")
-	}
-
-	sale.ID = uuid.NewString()
-	sale.Status = randomStatus()
-	sale.CreatedAt = now
-	sale.UpdatedAt = now
-	sale.Version = 1
-
-	return s.storage.Set(sale)
-}
-
-func (s *Service) Get(id string, st string) ([]*Sale, error) {
-	return s.storage.FindSale(id, st)
-}
-
-func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
-	existing, err := s.storage.Read(id)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return nil, ErrNotFound
-		}
-		return nil, fmt.Errorf("internal server error: %w", err)
-	}
-
-	if existing.Status != "pending" {
-		return nil, fmt.Errorf("conflict")
-	}
-
-	if sale.Status == nil {
-		return nil, fmt.Errorf("bad request")
-	}
-
-	if *sale.Status != "approved" && *sale.Status != "rejected" {
-		return nil, fmt.Errorf("bad request")
-	}
-
-	existing.Status = *sale.Status
-	existing.UpdatedAt = time.Now()
-	existing.Version++
-
-	if err := s.storage.Set(existing); err != nil {
-		if errors.Is(err, ErrEmptyID) {
-			return nil, fmt.Errorf("bad request")
-		}
-		return nil, fmt.Errorf("internal server error: %w", err)
-	}
-
-	return existing, nil
-}
