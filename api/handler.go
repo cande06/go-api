@@ -13,7 +13,7 @@ import (
 type handler struct {
 	saleService *sale.Service
 	userService *user.Service
-	logger *zap.Logger
+	logger      *zap.Logger
 }
 
 // **************   USERS   *******************
@@ -111,7 +111,7 @@ func (h *handler) handleCreateSale(ctx *gin.Context) {
 	// request payload = solicitar datos
 	var req struct {
 		UserID string  `json:"user_id"`
-		Amount  float32 `json:"amount"`
+		Amount float32 `json:"amount"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -120,9 +120,22 @@ func (h *handler) handleCreateSale(ctx *gin.Context) {
 
 	s := &sale.Sale{
 		UserID: req.UserID,
-		Amount:  req.Amount,
+		Amount: req.Amount,
 	}
+
 	if err := h.saleService.Create(s); err != nil {
+		if errors.Is(err, sale.ErrEmptyID) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, sale.ErrInexistentUser) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, sale.ErrInvalidAmount) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -202,8 +215,24 @@ func (h *handler) handleUpdateSale(ctx *gin.Context) {
 
 	s, err := h.saleService.Update(id, &fields)
 	if err != nil {
+		//sale not found
 		if errors.Is(err, sale.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		//incorrect update status; empty body
+		if errors.Is(err, sale.ErrInvalidStatus) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		//sale status already pending
+		if errors.Is(err, sale.ErrSameStatus) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		//invalid update status
+		if errors.Is(err, sale.ErrInvalidUpdate) {
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
 
