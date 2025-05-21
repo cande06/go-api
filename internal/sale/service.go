@@ -44,6 +44,9 @@ func randomStatus() string {
 
 // Verifica que el usuario exista sin hacer una consulta http al localhost
 func (s *Service) validateUser(userID string) error {
+	if userID == "" {
+		return user.ErrEmptyID
+	}
 	_, err := s.userStorage.Read(userID)
 	if err != nil {
 		return ErrInexistentUser
@@ -80,18 +83,18 @@ func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 	//sale exists
 	existing, err := s.storage.Read(id)
 	if err != nil {
-		// if errors.Is(err, ErrNotFound) {
-		// return nil, ErrNotFound
-		// }
-
 		return nil, err
 	}
-	//sale status must be pending
-	if existing.Status != "pending" {
-		return nil, ErrInvalidRequest
-	}
 	// validate body
-	if (*sale.Status != "approved") && (*sale.Status != "rejected") || (sale.Status == nil) {
+	if *sale.Status != "approved" && *sale.Status != "rejected" && *sale.Status != "pending" || sale.Status == nil {
+		return nil, ErrInvalidStatus
+	}
+	//sale status already pending
+	if existing.Status == "pending" && *sale.Status == "pending" {
+		return nil, ErrSameStatus
+	}
+	// validate update
+	if existing.Status != "pending" {
 		return nil, ErrInvalidUpdate
 	}
 

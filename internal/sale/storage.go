@@ -5,17 +5,20 @@ import "errors"
 // ErrNotFound retorna cuando la venta proporcionada no existe (sale not found)
 var ErrNotFound = errors.New("sale not found")
 
-// ErrEmptyID retorna cuando se intenta almacenar una venta con ID vacio (id empty)
+// ErrEmptyID retorna cuando se ingresa un sale ID vacio (id empty)
 var ErrEmptyID = errors.New("empty ID")
 
-// ErrInvalidStatus retorna cuando se intenta buscar una venta con un estado invalido
-var ErrInvalidStatus = errors.New("invalid sale status")
-
+// ErrInvalidAmount retorna cuando se intenta ingresar un monto menor o igual a 0
 var ErrInvalidAmount = errors.New("amount must be greater than 0")
 
-var ErrInvalidRequest = errors.New("sale to update must have pending status")
+// ErrInvalidStatus retorna cuando se ingresa un estado mal escrito o vacío
+var ErrInvalidStatus = errors.New("invalid sale status")
 
-var ErrInvalidUpdate = errors.New("invalid update status")
+// ErrSameStatus retorna cuando el estado para actualizar es pending
+var ErrSameStatus = errors.New("status is already 'pending'")
+
+// ErrInvalidUpdate retorna cuando se intenta realizar un cambio de estado no válido
+var ErrInvalidUpdate = errors.New("only sales with a 'pending' status can be updated")
 
 type Storage interface {
 	Set(sale *Sale) error
@@ -47,12 +50,12 @@ func (l *LocalStorage) Set(sale *Sale) error {
 }
 
 func (l *LocalStorage) Read(id string) (*Sale, error) {
-	u, ok := l.m[id]
+	s, ok := l.m[id]
 	if !ok {
 		return nil, ErrNotFound
 	}
 
-	return u, nil
+	return s, nil
 }
 
 func (l *LocalStorage) FindSale(id string, st string) ([]*Sale, error) {

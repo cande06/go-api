@@ -220,12 +220,17 @@ func (h *handler) handleUpdateSale(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
-		//sale status not pending
-		if errors.Is(err, sale.ErrInvalidRequest) {
+		//incorrect update status; empty body
+		if errors.Is(err, sale.ErrInvalidStatus) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		//incorrect update status; invalid body
+		//sale status already pending
+		if errors.Is(err, sale.ErrSameStatus) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		//invalid update status
 		if errors.Is(err, sale.ErrInvalidUpdate) {
 			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
