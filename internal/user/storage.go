@@ -1,12 +1,21 @@
 package user
 
-import "errors"
+import (
+	"errors"
+	"regexp"
+)
 
 // ErrNotFound is returned when a user with the given ID is not found.
 var ErrNotFound = errors.New("user not found")
 
 // ErrEmptyID is returned when trying to store a user with an empty ID.
 var ErrEmptyID = errors.New("empty user ID")
+
+var ErrName = errors.New("empty user name")
+var ErrAddress = errors.New("empty user address")
+
+var ErrNameString = errors.New("user name can only contains letters")
+var ErrNicknameString = errors.New("user nickname can only contains letters")
 
 // Storage is the main interface for our storage layer.
 type Storage interface {
@@ -32,6 +41,20 @@ func NewLocalStorage() *LocalStorage {
 func (l *LocalStorage) Set(user *User) error {
 	if user.ID == "" {
 		return ErrEmptyID
+	}
+	if user.Name == "" {
+		return ErrName
+	}
+	if user.Address == "" {
+		return ErrAddress
+	}
+
+	regex := regexp.MustCompile(`^[\p{L} ]+$`) //expresion regular para strings con solo letras
+	if !regex.MatchString(user.Name) {
+		return ErrNameString
+	}
+	if !regex.MatchString(user.NickName) {
+		return ErrNicknameString
 	}
 
 	l.m[user.ID] = user //guarda el user, con user.ID como su key
