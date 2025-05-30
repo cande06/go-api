@@ -4,3 +4,6 @@
 • Bettina Jofré Pasinetti
 • Candela Gonzalez
 • Bruno Sosa
+
+### Info:
+El cuerpo del proyecto se encuentra en la rama `develop`
