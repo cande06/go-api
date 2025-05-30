@@ -12,6 +12,10 @@ import (
 	"testing"
 )
 
+/* Test de integración para Users y Sales. 
+	Los casos son dependientes del estado,
+	no fueron pensados para ser ejecutados individualmente.
+*/
 func TestIntegrationCreateAndGet(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	app := gin.Default()
@@ -20,6 +24,7 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 	var createdUser user.User
 	var createdSaleID string
 
+	// Create User Test
 	t.Run("create user", func(t *testing.T) {
 		reqUser, _ := http.NewRequest(http.MethodPost, "/users", bytes.NewBufferString(`{
 			"name":"Ayrton",
@@ -35,6 +40,7 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 		require.NotEmpty(t, createdUser.ID)
 	})
 
+	// Patch User Test
 	t.Run("patch user", func(t *testing.T) {
 		status := "approved"
 		updatePayload := map[string]*string{
@@ -54,11 +60,12 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 		require.Equal(t, "Ayrton", patchUser.Name)
 	})
 
+	// Create User Test
 	t.Run("create sale", func(t *testing.T) {
 		salePayload := map[string]interface{}{
 			"user_id": createdUser.ID,
 			"amount":  999.9,
-			"status": "pending",
+			"status":  "pending",
 		}
 		payloadBytes, _ := json.Marshal(salePayload)
 
@@ -74,14 +81,12 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 		require.NotEmpty(t, createdSaleID)
 	})
 
+	// Get Sale Test
 	t.Run("get sale", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, "/sales?user_id="+createdUser.ID, nil)
 		res := fakeRequest(app, req)
 
 		require.Equal(t, http.StatusOK, res.Code)
-
-		var fetchedSale map[string]interface{}
-		require.NoError(t, json.Unmarshal(res.Body.Bytes(), &fetchedSale))
 
 		var response map[string]interface{}
 		require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
@@ -93,6 +98,7 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 		require.Equal(t, createdUser.ID, firstSale["user_id"])
 	})
 
+	// Patch Sale Test
 	t.Run("patch sale", func(t *testing.T) {
 		updatePayload := map[string]interface{}{
 			"status": "approved",
@@ -103,7 +109,9 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 		reqSale.Header.Set("Content-Type", "application/json")
 
 		resSale := fakeRequest(app, reqSale)
+
 		t.Log("PATCH response body:", resSale.Body.String())
+
 		require.Equal(t, http.StatusOK, resSale.Code)
 
 		var patchedSale map[string]interface{}
@@ -111,12 +119,7 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 		require.Equal(t, "approved", patchedSale["status"])
 	})
 
-	// t.Run("delete user", func(t *testing.T) {
-	// 	req, _ := http.NewRequest(http.MethodDelete, "/users/"+createdUser.ID, nil)
-	// 	res := fakeRequest(app, req)
-	// 	require.Equal(t, http.StatusOK, res.Code)
-	// })
-
+	// Route test
 	t.Run("ping", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
 		res := fakeRequest(app, req)
@@ -128,6 +131,5 @@ func TestIntegrationCreateAndGet(t *testing.T) {
 func fakeRequest(e *gin.Engine, r *http.Request) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	e.ServeHTTP(w, r)
-
 	return w
 }
